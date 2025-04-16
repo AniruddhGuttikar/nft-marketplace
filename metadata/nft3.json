@@ -1,0 +1,23 @@
+{
+  "name": "Tadashi Yamaguchi",
+  "description": "The pinch server who rose from insecurity to deadly precision. Quiet, loyal, and always improving.",
+  "image": "ipfs://bafkreie3nkm5fqrzr6t7f4jtne4nui2lz5gshccfx3ipbq5xettov7qy4y",
+  "attributes": [
+    {
+      "trait_type": "Team",
+      "value": "Karasuno High"
+    },
+    {
+      "trait_type": "Position",
+      "value": "Pinch Server"
+    },
+    {
+      "trait_type": "Personality",
+      "value": "Loyal Underdog"
+    },
+    {
+      "trait_type": "Special Trait",
+      "value": "Jump Float Ace"
+    }
+  ]
+}

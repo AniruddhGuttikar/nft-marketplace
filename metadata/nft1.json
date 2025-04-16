@@ -1,0 +1,23 @@
+{
+  "name": "Osamu Miya",
+  "description": "Co-founder of Miya Twins' Onigiri Shop. Calm, practical, and secretly a beast on the court.",
+  "image": "ipfs://bafkreiegifj47jmfknzhmrzbqlm7nnb5v5dv3fjweddfw3m52r6mkjcubi",
+  "attributes": [
+    {
+      "trait_type": "Team",
+      "value": "Inarizaki High"
+    },
+    {
+      "trait_type": "Position",
+      "value": "Wing Spiker"
+    },
+    {
+      "trait_type": "Personality",
+      "value": "Chill Strategist"
+    },
+    {
+      "trait_type": "Special Trait",
+      "value": "Deadly Twin Sync"
+    }
+  ]
+}

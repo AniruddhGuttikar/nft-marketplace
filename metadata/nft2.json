@@ -1,0 +1,23 @@
+{
+  "name": "Kuroo Tetsurō",
+  "description": "Nekoma's cunning captain, master of mind games and the Blocker you never see coming.",
+  "image": "ipfs://bafkreifcjuw5gjg4vv6ovy6m2ag3sayfi33tyzhzp66lzzotzyx2xqbq4m",
+  "attributes": [
+    {
+      "trait_type": "Team",
+      "value": "Nekoma High"
+    },
+    {
+      "trait_type": "Position",
+      "value": "Middle Blocker"
+    },
+    {
+      "trait_type": "Personality",
+      "value": "Tactical Tease"
+    },
+    {
+      "trait_type": "Special Trait",
+      "value": "Iron Wall Smirk"
+    }
+  ]
+}
