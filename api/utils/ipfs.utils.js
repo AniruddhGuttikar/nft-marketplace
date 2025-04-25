@@ -11,18 +11,23 @@ const pinataApiSecret = process.env.PINATA_API_SECRET;
  * @param {Buffer} fileData - File data buffer
  * @returns {Promise<{cid: string}>} - IPFS CID
  */
-exports.uploadFileToIPFS = async (fileData) => {
+exports.uploadFileToIPFS = async (fileData, filename, contentType) => {
   try {
     const formData = new FormData();
-    formData.append("file", fileData);
+
+    // Append the file buffer with the correct filename and mimetype
+    formData.append("file", fileData, {
+      filename,
+      contentType,
+    });
 
     const response = await axios.post(
       "https://api.pinata.cloud/pinning/pinFileToIPFS",
       formData,
       {
-        maxBodyLength: "Infinity",
+        maxBodyLength: Infinity,
         headers: {
-          "Content-Type": `multipart/form-data; boundary=${formData._boundary}`,
+          ...formData.getHeaders(),
           pinata_api_key: pinataApiKey,
           pinata_secret_api_key: pinataApiSecret,
         },
@@ -31,7 +36,10 @@ exports.uploadFileToIPFS = async (fileData) => {
 
     return { cid: response.data.IpfsHash };
   } catch (error) {
-    console.error("Error uploading file to IPFS:", error);
+    console.error(
+      "Error uploading file to IPFS:",
+      error.response?.data || error.message
+    );
     throw new Error("Failed to upload file to IPFS");
   }
 };

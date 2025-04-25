@@ -47,7 +47,7 @@ exports.getAllNFTs = async (req, res) => {
 exports.getNFTByTokenId = async (req, res) => {
   try {
     const tokenId = req.params.tokenId;
-
+    console.log("getNFTByTokenId called with tokenId: ", tokenId);
     // Check if NFT exists
     try {
       await nftContract.ownerOf(tokenId);
@@ -65,15 +65,21 @@ exports.getNFTByTokenId = async (req, res) => {
     // Get metadata from IPFS
     const metadata = await ipfsUtils.getMetadataFromIPFS(tokenURI);
 
+    console.log(
+      `tokenURI: ${tokenURI}, owner: ${owner}, creator: ${creator}, royaltyPercentage: ${typeof royaltyPercentage}`
+    );
+    console.log("metadata: ", metadata);
+
     res.json({
       tokenId,
       owner,
       creator,
       tokenURI,
       metadata,
-      royaltyPercentage: royaltyPercentage.toNumber() / 100, // Convert basis points to percentage
+      royaltyPercentage: Number(royaltyPercentage) / 100, // Convert basis points to percentage
     });
   } catch (error) {
+    console.error("Error in getNFTByTokenId: ", error.message);
     res.status(500).json({ error: error.message });
   }
 };
@@ -168,13 +174,18 @@ exports.getNFTsByCreator = async (req, res) => {
  */
 exports.uploadToIPFS = async (req, res) => {
   try {
-    // console.log(req);
+    console.log("uplaodToIPFS called");
+    console.log(req.files.image);
     if (!req.files || !req.files.image) {
       return res.status(400).json({ error: "No file uploaded" });
     }
 
     const file = req.files.image;
-    const result = await ipfsUtils.uploadFileToIPFS(file.data);
+    const result = await ipfsUtils.uploadFileToIPFS(
+      file.data,
+      file.name,
+      file.mimetype
+    );
 
     res.json({
       success: true,

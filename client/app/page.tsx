@@ -1,73 +1,84 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { getAllMarketplaceItems } from "@/lib/api"
-import NFTCard, { NFTCardSkeleton } from "@/components/nft-card"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Search } from "lucide-react"
+import { useEffect, useState } from "react";
+import { getAllMarketplaceItems } from "@/lib/api";
+import NFTCard, { NFTCardSkeleton } from "@/components/nft-card";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Search } from "lucide-react";
 
 interface NFTItem {
-  id: string
-  tokenId: string
-  name: string
-  description: string
-  image: string
-  price: string
-  seller: string
-  creator: string
+  tokenId: string;
+  price: string;
+  seller: string;
+  creator: string;
+  metadata: {
+    name: string;
+    description: string;
+    image: string;
+  };
 }
 
 export default function Home() {
-  const [nfts, setNfts] = useState<NFTItem[]>([])
-  const [filteredNfts, setFilteredNfts] = useState<NFTItem[]>([])
-  const [loading, setLoading] = useState(true)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [sortBy, setSortBy] = useState("recent")
+  const [nfts, setNfts] = useState<NFTItem[]>([]);
+  const [filteredNfts, setFilteredNfts] = useState<NFTItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState("recent");
 
   useEffect(() => {
     const fetchNFTs = async () => {
       try {
-        const data = await getAllMarketplaceItems()
-        setNfts(data)
-        setFilteredNfts(data)
+        const data = await getAllMarketplaceItems();
+        setNfts(data);
+        setFilteredNfts(data);
       } catch (error) {
-        console.error("Failed to fetch NFTs:", error)
+        console.error("Failed to fetch NFTs:", error);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    fetchNFTs()
-  }, [])
+    fetchNFTs();
+  }, []);
 
   useEffect(() => {
     // Filter NFTs based on search term
     const filtered = nfts.filter(
       (nft) =>
-        nft.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        nft.description.toLowerCase().includes(searchTerm.toLowerCase()),
-    )
+        nft.metadata.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        nft.metadata.description
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase())
+    );
 
     // Sort NFTs based on selected option
     const sorted = [...filtered].sort((a, b) => {
       if (sortBy === "price-low") {
-        return Number.parseFloat(a.price) - Number.parseFloat(b.price)
+        return Number.parseFloat(a.price) - Number.parseFloat(b.price);
       } else if (sortBy === "price-high") {
-        return Number.parseFloat(b.price) - Number.parseFloat(a.price)
+        return Number.parseFloat(b.price) - Number.parseFloat(a.price);
       }
       // Default: recent (by id, assuming higher id means more recent)
-      return Number.parseInt(b.id) - Number.parseInt(a.id)
-    })
+      return Number.parseInt(b.tokenId) - Number.parseInt(a.tokenId);
+    });
 
-    setFilteredNfts(sorted)
-  }, [searchTerm, sortBy, nfts])
+    setFilteredNfts(sorted);
+  }, [searchTerm, sortBy, nfts]);
 
   return (
     <div className="container py-8">
       <div className="flex flex-col gap-4">
         <h1 className="text-3xl font-bold">Discover NFTs</h1>
-        <p className="text-muted-foreground">Explore and collect unique digital assets on our marketplace</p>
+        <p className="text-muted-foreground">
+          Explore and collect unique digital assets on our marketplace
+        </p>
 
         <div className="flex flex-col sm:flex-row gap-4 my-4">
           <div className="relative flex-1">
@@ -103,10 +114,9 @@ export default function Home() {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {filteredNfts.map((nft) => (
               <NFTCard
-                key={nft.id}
-                id={nft.id}
-                name={nft.name}
-                image={nft.image}
+                key={nft.tokenId}
+                name={nft.metadata.name}
+                image={nft.metadata.image}
                 price={nft.price}
                 creator={nft.creator}
                 tokenId={nft.tokenId}
@@ -117,11 +127,13 @@ export default function Home() {
           <div className="text-center py-12">
             <h3 className="text-xl font-semibold">No NFTs Found</h3>
             <p className="text-muted-foreground mt-2">
-              {searchTerm ? "Try a different search term" : "There are no NFTs listed yet"}
+              {searchTerm
+                ? "Try a different search term"
+                : "There are no NFTs listed yet"}
             </p>
           </div>
         )}
       </div>
     </div>
-  )
+  );
 }

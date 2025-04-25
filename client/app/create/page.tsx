@@ -21,6 +21,7 @@ import {
 import { useToast } from "@/components/ui/use-toast";
 import { parseEther } from "ethers";
 import { Upload, ImageIcon } from "lucide-react";
+import { connectToContracts } from "@/contracts/contracts";
 
 export default function CreateNFT() {
   const router = useRouter();
@@ -31,6 +32,7 @@ export default function CreateNFT() {
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
   const [image, setImage] = useState<File | null>(null);
+  const [royaltyPercentage, setRoyaltyPercentage] = useState("250"); // Default to 2.5%
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -84,22 +86,60 @@ export default function CreateNFT() {
         description,
         image: imageUrl,
         creatorAddress: address,
+        royaltyPercentage: royaltyPercentage, // Optional, defaults to 250 = 2.5%
         // attributes: [], // Add actual attributes if needed
-        // royaltyPercentage: 250, // Optional, defaults to 250 = 2.5%
       };
-
+      console.log("nftData: ", nftData);
       // 3. Create NFT
       const nft = await createNFT(nftData);
       const tokenURI = nft.tokenURI;
 
+      const { nftContract, royaltyContract, marketplaceContract } =
+        await connectToContracts();
+
+      const createTokenTx = await nftContract.createToken(tokenURI);
+      const receipt = await createTokenTx.wait();
+
+      const event = receipt.logs.find((log: any) => {
+        const parsedLog = nftContract.interface.parseLog(log);
+        return parsedLog && parsedLog.name === "TokenCreated";
+      });
+
+      const parsedEvent = nftContract.interface.parseLog(event);
+      const tokenId = parsedEvent?.args.tokenId;
+
+      console.log("TokenID: ", tokenId);
+      const royaltyValue = BigInt(royaltyPercentage);
+
+      const royaltyTx = await royaltyContract.setRoyaltyPercentage(
+        tokenId,
+        royaltyValue
+      );
+      await royaltyTx.wait();
+      console.log("Royalty set successfully");
+      // make the minter as the owner of the nft
+
       // 4. List NFT on marketplace
       const marketplaceData = {
-        tokenId: nft.tokenId,
+        tokenId: tokenId.toString(),
         price: parseEther(price).toString(),
         seller: address,
       };
 
-      await createMarketplaceItem(marketplaceData);
+      const marketplace = await createMarketplaceItem(marketplaceData);
+
+      const approvalTx = await nftContract.approve(
+        marketplaceContract.target,
+        tokenId
+      );
+      await approvalTx.wait();
+
+      // Now create the market item on the blockchain
+      const createMarketItemTx = await marketplaceContract.createMarketItem(
+        tokenId,
+        parseEther(price).toString()
+      );
+      await createMarketItemTx.wait();
 
       toast({
         title: "NFT Created Successfully",
@@ -107,7 +147,7 @@ export default function CreateNFT() {
       });
 
       // Redirect to the NFT page
-      router.push(`/nft/${nft.tokenId}`);
+      router.push(`/nft/${tokenId}`);
     } catch (error) {
       console.error("Failed to create NFT:", error);
       toast({
@@ -226,6 +266,19 @@ export default function CreateNFT() {
                   onChange={(e) => setPrice(e.target.value)}
                   placeholder="0.05"
                   required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="price">Royalty Percentage</Label>
+                <Input
+                  id="royalty"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={royaltyPercentage}
+                  onChange={(e) => setRoyaltyPercentage(e.target.value)}
+                  placeholder="0.05"
                 />
               </div>
 

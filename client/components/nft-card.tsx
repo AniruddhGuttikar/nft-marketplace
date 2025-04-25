@@ -1,28 +1,45 @@
-import Image from "next/image"
-import Link from "next/link"
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
-import { formatEther } from "ethers"
+import Image from "next/image";
+import Link from "next/link";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { formatEther } from "ethers";
 
 interface NFTCardProps {
-  id: string
-  name: string
-  image: string
-  price: string
-  creator: string
-  tokenId: string
+  name: string;
+  image: string;
+  price: string;
+  creator: string;
+  tokenId: string;
 }
 
-export default function NFTCard({ id, name, image, price, creator, tokenId }: NFTCardProps) {
+const resolveIPFS = (uri: string) => {
+  if (!uri) return "/placeholder.svg";
+  return uri.startsWith("ipfs://")
+    ? uri.replace("ipfs://", "https://ipfs.io/ipfs/")
+    : uri;
+};
+
+export default function NFTCard({
+  name,
+  image,
+  price,
+  creator,
+  tokenId,
+}: NFTCardProps) {
   return (
     <Link href={`/nft/${tokenId}`}>
       <Card className="overflow-hidden transition-all hover:shadow-lg">
         <CardHeader className="p-0">
           <div className="aspect-square relative overflow-hidden">
             <Image
-              src={image || "/placeholder.svg"}
-              alt={name}
+              src={resolveIPFS(image)}
+              alt={"nft image"}
               fill
               className="object-cover transition-transform hover:scale-105"
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
@@ -37,13 +54,13 @@ export default function NFTCard({ id, name, image, price, creator, tokenId }: NF
         </CardContent>
         <CardFooter className="p-4 pt-0 flex justify-between items-center">
           <Badge variant="outline" className="font-semibold">
-            {formatEther(price)} ETH
+            {price} ETH
           </Badge>
           <Badge>#{tokenId}</Badge>
         </CardFooter>
       </Card>
     </Link>
-  )
+  );
 }
 
 export function NFTCardSkeleton() {
@@ -61,5 +78,5 @@ export function NFTCardSkeleton() {
         <Skeleton className="h-5 w-10" />
       </CardFooter>
     </Card>
-  )
+  );
 }

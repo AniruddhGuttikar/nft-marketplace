@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const morgan = require("morgan");
+const fileUpload = require("express-fileupload");
 require("dotenv").config();
 
 // Import routes
@@ -15,7 +16,7 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 app.use(morgan("dev"));
-
+app.use(fileUpload());
 // Routes
 app.use("/api/nfts", nftRoutes);
 app.use("/api/marketplace", marketplaceRoutes);

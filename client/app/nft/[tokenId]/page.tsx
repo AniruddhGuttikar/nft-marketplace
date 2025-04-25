@@ -1,76 +1,90 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import Image from "next/image"
-import { useParams, useRouter } from "next/navigation"
-import { getNFTByTokenId, getMarketplaceItemById } from "@/lib/api"
-import { useWallet } from "@/context/wallet-context"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useToast } from "@/components/ui/use-toast"
-import { ethers } from "ethers"
-import { Heart, Share2, ExternalLink } from "lucide-react"
+import { useEffect, useState } from "react";
+import Image from "next/image";
+import { useParams, useRouter } from "next/navigation";
+import { getNFTByTokenId, getMarketplaceItemById } from "@/lib/api";
+import { useWallet } from "@/context/wallet-context";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/components/ui/use-toast";
+import { ethers } from "ethers";
+import { Heart, Share2, ExternalLink } from "lucide-react";
+import { connectToContracts } from "@/contracts/contracts";
 
 interface NFTDetails {
-  tokenId: string
-  name: string
-  description: string
-  image: string
-  creator: string
+  tokenId: string;
+  name: string;
+  description: string;
+  image: string;
+  creator: string;
   attributes?: Array<{
-    trait_type: string
-    value: string
-  }>
+    trait_type: string;
+    value: string;
+  }>;
+  metadata: {
+    name: string;
+    description: string;
+    image: string;
+  };
 }
 
 interface MarketplaceItem {
-  id: string
-  tokenId: string
-  price: string
-  seller: string
+  itemId: string;
+  tokenId: string;
+  price: string;
+  seller: string;
 }
 
-export default function NFTDetails() {
-  const params = useParams()
-  const router = useRouter()
-  const { toast } = useToast()
-  const { address, isConnected } = useWallet()
-  const tokenId = params.tokenId as string
+const resolveIPFS = (uri: string) => {
+  if (!uri) return "/placeholder.svg";
+  return uri.startsWith("ipfs://")
+    ? uri.replace("ipfs://", "https://ipfs.io/ipfs/")
+    : uri;
+};
 
-  const [nft, setNft] = useState<NFTDetails | null>(null)
-  const [marketItem, setMarketItem] = useState<MarketplaceItem | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [buyLoading, setBuyLoading] = useState(false)
+export default function NFTDetails() {
+  const params = useParams();
+  const router = useRouter();
+  const { toast } = useToast();
+  const { address, isConnected } = useWallet();
+  const tokenId = params.tokenId as string;
+
+  const [nft, setNft] = useState<NFTDetails | null>(null);
+  const [marketItem, setMarketItem] = useState<MarketplaceItem | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [buyLoading, setBuyLoading] = useState(false);
 
   useEffect(() => {
     const fetchNFTDetails = async () => {
       try {
-        setLoading(true)
-        const nftData = await getNFTByTokenId(tokenId)
-        setNft(nftData)
+        setLoading(true);
+        const nftData = await getNFTByTokenId(tokenId);
+        console.log("NFT Data: ", nftData);
+        setNft(nftData);
 
         // Get marketplace item details
-        const marketItemData = await getMarketplaceItemById(tokenId)
-        setMarketItem(marketItemData)
+        const marketItemData = await getMarketplaceItemById(tokenId);
+        setMarketItem(marketItemData);
       } catch (error) {
-        console.error("Failed to fetch NFT details:", error)
+        console.error("Failed to fetch NFT details:", error);
         toast({
           variant: "destructive",
           title: "Error",
           description: "Failed to load NFT details",
-        })
+        });
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
     if (tokenId) {
-      fetchNFTDetails()
+      fetchNFTDetails();
     }
-  }, [tokenId, toast])
+  }, [tokenId, toast]);
 
   const handleBuyNFT = async () => {
     if (!isConnected) {
@@ -78,36 +92,58 @@ export default function NFTDetails() {
         variant: "destructive",
         title: "Wallet Not Connected",
         description: "Please connect your wallet to buy this NFT",
-      })
-      return
+      });
+      return;
     }
 
-    if (!marketItem) return
+    if (!marketItem) return;
 
     try {
-      setBuyLoading(true)
+      setBuyLoading(true);
 
-      // In a real implementation, this would interact with the blockchain
-      // For this demo, we'll simulate a successful purchase
+      // Connect to contracts
+      const { nftContract, royaltyContract, marketplaceContract } =
+        await connectToContracts();
+
+      console.log("NFT : ", nft);
+      console.log("Marketplace Item : ", marketItem);
+
+      if (!nft || !marketItem) {
+        throw new Error("NFT or Market Item not found");
+      }
+
+      // Convert string ID to number (ethers will handle the conversion to uint256)
+      const itemId = ethers.toBigInt(marketItem.itemId);
+
+      // Parse the price from string to BigInt/ether value
+      const price = ethers.parseEther(marketItem.price);
+      console.log("Price: ", marketItem.price);
+      console.log("Item ID: ", marketItem.itemId);
+
+      const buyTx = await marketplaceContract.createMarketSale(itemId, {
+        value: price,
+      });
+      // Wait for transaction to be confirmed
+      const receipt = await buyTx.wait();
 
       toast({
         title: "Purchase Successful",
         description: "You have successfully purchased this NFT!",
-      })
+      });
 
       // Redirect to profile page
-      router.push(`/profile/${address}`)
+      router.push(`/profile/${address}`);
     } catch (error) {
-      console.error("Failed to buy NFT:", error)
+      console.error("Failed to buy NFT:", error);
       toast({
         variant: "destructive",
         title: "Transaction Failed",
         description: "Failed to complete the purchase. Please try again.",
-      })
+      });
     } finally {
-      setBuyLoading(false)
+      setBuyLoading(false);
     }
-  }
+  };
 
   if (loading) {
     return (
@@ -122,20 +158,22 @@ export default function NFTDetails() {
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   if (!nft) {
     return (
       <div className="container py-12 text-center">
         <h1 className="text-3xl font-bold mb-4">NFT Not Found</h1>
-        <p className="text-muted-foreground mb-6">The NFT you're looking for doesn't exist or has been removed.</p>
+        <p className="text-muted-foreground mb-6">
+          The NFT you're looking for doesn't exist or has been removed.
+        </p>
         <Button onClick={() => router.push("/")}>Back to Home</Button>
       </div>
-    )
+    );
   }
 
-  const isOwner = marketItem?.seller.toLowerCase() === address?.toLowerCase()
+  const isOwner = marketItem?.seller.toLowerCase() === address?.toLowerCase();
 
   return (
     <div className="container py-8">
@@ -143,8 +181,8 @@ export default function NFTDetails() {
         {/* NFT Image */}
         <div className="relative aspect-square rounded-lg overflow-hidden border">
           <Image
-            src={nft.image || "/placeholder.svg"}
-            alt={nft.name}
+            src={resolveIPFS(nft.metadata.image)}
+            alt={nft.metadata.name}
             fill
             className="object-cover"
             sizes="(max-width: 768px) 100vw, 50vw"
@@ -180,8 +218,10 @@ export default function NFTDetails() {
               <CardContent className="p-4">
                 <div className="flex justify-between items-center">
                   <div>
-                    <p className="text-sm text-muted-foreground">Current Price</p>
-                    <p className="text-2xl font-bold">{ethers.formatEther(marketItem.price)} ETH</p>
+                    <p className="text-sm text-muted-foreground">
+                      Current Price
+                    </p>
+                    <p className="text-2xl font-bold">{marketItem.price} ETH</p>
                   </div>
 
                   {isOwner ? (
@@ -189,7 +229,10 @@ export default function NFTDetails() {
                       You Own This NFT
                     </Button>
                   ) : (
-                    <Button onClick={handleBuyNFT} disabled={buyLoading || !isConnected}>
+                    <Button
+                      onClick={handleBuyNFT}
+                      disabled={buyLoading || !isConnected}
+                    >
                       {buyLoading ? "Processing..." : "Buy Now"}
                     </Button>
                   )}
@@ -207,7 +250,9 @@ export default function NFTDetails() {
               <div className="space-y-4">
                 <div>
                   <h3 className="font-semibold">Description</h3>
-                  <p className="text-muted-foreground mt-1">{nft.description}</p>
+                  <p className="text-muted-foreground mt-1">
+                    {nft.description}
+                  </p>
                 </div>
 
                 <div>
@@ -226,18 +271,22 @@ export default function NFTDetails() {
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {nft.attributes.map((attr, index) => (
                     <div key={index} className="bg-muted rounded-lg p-3">
-                      <p className="text-xs text-muted-foreground">{attr.trait_type}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {attr.trait_type}
+                      </p>
                       <p className="font-medium truncate">{attr.value}</p>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-muted-foreground">No attributes found for this NFT.</p>
+                <p className="text-muted-foreground">
+                  No attributes found for this NFT.
+                </p>
               )}
             </TabsContent>
           </Tabs>
         </div>
       </div>
     </div>
-  )
+  );
 }

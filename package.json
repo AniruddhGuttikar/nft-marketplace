@@ -12,7 +12,7 @@
     "deploy:mumbai": "hardhat run scripts/deploy.js --network mumbai",
     "seed": "hardhat run scripts/seed.js --network localhost",
     "node": "hardhat node",
-    "api": "node api/server.js"
+    "api": "nodemon api/server.js"
   },
   "dependencies": {
     "@openzeppelin/contracts": "^4.8.0",
@@ -27,6 +27,7 @@
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
     "ethers": "^6.13.5",
-    "hardhat": "^2.12.7"
+    "hardhat": "^2.12.7",
+    "nodemon": "^3.1.9"
   }
 }

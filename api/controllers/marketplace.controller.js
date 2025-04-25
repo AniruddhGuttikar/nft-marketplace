@@ -14,19 +14,28 @@ exports.getAllMarketItems = async (req, res) => {
 
     const formattedItems = await Promise.all(
       items.map(async (item) => {
-        console.log("ITEM OWNER: ", type(item.owner));
+        // console.log("ITEM OWNER: ", typeof item.owner);
 
         const tokenURI = await nftContract.tokenURI(item.tokenId);
         const metadata = await ipfsUtils.getMetadataFromIPFS(tokenURI);
         const creator = await nftContract.getCreator(item.tokenId);
 
+        // console.log("itemId: ", item.itemId);
+        // console.log("item tokenId: ", item.tokenId);
+        // console.log("item seller: ", item.seller);
+        // console.log("item owner: ", item.owner);
+        // console.log("item creator: ", creator);
+        // console.log("item price: ", item.price);
+        // console.log("item sold: ", item.sold);
+        // console.log("item tokenURI: ", tokenURI);
+        // console.log("item metadata: ", metadata);
+
         return {
-          itemId: item.itemId.toString(),
           tokenId: item.tokenId.toString(),
           seller: item.seller,
           owner: item.owner,
           creator: creator,
-          price: ethers.utils.formatEther(item.price),
+          price: ethers.formatEther(item.price),
           sold: item.sold,
           tokenURI,
           metadata,
@@ -36,6 +45,7 @@ exports.getAllMarketItems = async (req, res) => {
 
     res.json(formattedItems);
   } catch (error) {
+    console.error("Error in getAllMarketItems: ", error.message);
     res.status(500).json({ error: error.message });
   }
 };
@@ -50,7 +60,9 @@ exports.getMarketItemById = async (req, res) => {
     // Since there's no direct method to get a single item,
     // we need to get all items and filter
     const items = await marketplaceContract.fetchMarketItems();
-    const item = items.find((i) => i.itemId.toString() === itemId);
+    console.log("item id: ", itemId);
+    console.log("items: ", items);
+    const item = items.find((item) => item[0].toString() === itemId);
 
     if (!item) {
       return res.status(404).json({ error: "Item not found" });
@@ -60,18 +72,28 @@ exports.getMarketItemById = async (req, res) => {
     const metadata = await ipfsUtils.getMetadataFromIPFS(tokenURI);
     const creator = await nftContract.getCreator(item.tokenId);
 
+    console.log("item tokenId: ", item.tokenId);
+    console.log("item seller: ", item.seller);
+    console.log("item owner: ", item.owner);
+    console.log("item creator: ", creator);
+    console.log("item price: ", item.price);
+    console.log("item sold: ", item.sold);
+    console.log("item tokenURI: ", tokenURI);
+    console.log("item metadata: ", metadata);
+
     res.json({
-      itemId: item.itemId.toString(),
+      itemId: itemId.toString(),
       tokenId: item.tokenId.toString(),
       seller: item.seller,
       owner: item.owner,
       creator: creator,
-      price: ethers.utils.formatEther(item.price),
+      price: ethers.formatEther(item.price),
       sold: item.sold,
       tokenURI,
       metadata,
     });
   } catch (error) {
+    console.error("Error in getMarketItemById: ", error.message);
     res.status(500).json({ error: error.message });
   }
 };
@@ -83,6 +105,7 @@ exports.createMarketItem = async (req, res) => {
   try {
     const { tokenId, price } = req.body;
 
+    console.log("tokenID, price :", tokenId, price);
     if (!tokenId || !price) {
       return res.status(400).json({ error: "Missing required fields" });
     }
@@ -93,7 +116,7 @@ exports.createMarketItem = async (req, res) => {
       instructions: {
         contractAddress: marketplaceContract.address,
         methodName: "createMarketItem",
-        params: [tokenId, ethers.utils.parseEther(price.toString())],
+        params: [tokenId],
         approvalNeeded: {
           contractAddress: nftContract.address,
           methodName: "approve",
@@ -102,6 +125,7 @@ exports.createMarketItem = async (req, res) => {
       },
     });
   } catch (error) {
+    console.log("Error in creating the marketplace item: ", error.message);
     res.status(500).json({ error: error.message });
   }
 };

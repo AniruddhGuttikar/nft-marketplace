@@ -29,6 +29,7 @@ async function main() {
     "NFTMarketplace contract deployed to:",
     await marketplace.getAddress()
   );
+  console.log("Marketplace fee receiver address:", deployer.address);
 
   // Save the contract addresses
   saveContractAddresses({

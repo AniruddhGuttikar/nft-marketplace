@@ -46,10 +46,16 @@ export async function getNFTsByCreator(address: string) {
 }
 
 // Upload NFT image to IPFS
-export async function uploadNFTImage(file: File) {
+export async function uploadNFTImage(file: File | Object) {
   console.log("uploadNFTImage: ", file);
   const formData = new FormData();
-  formData.append("image", file);
+  if (file instanceof File) {
+    formData.append("image", file);
+  } else {
+    // If it's metadata object, convert to JSON file
+    const blob = new Blob([JSON.stringify(file)], { type: "application/json" });
+    formData.append("image", blob, "metadata.json");
+  }
 
   const response = await fetch(`${API_BASE_URL}/api/nfts/upload`, {
     method: "POST",
@@ -57,8 +63,8 @@ export async function uploadNFTImage(file: File) {
   });
   if (!response.ok) {
     throw new Error("Failed to upload image");
-    return response.json();
   }
+  return response.json();
 }
 
 // Get all marketplace items
@@ -83,6 +89,7 @@ export async function getMarketplaceItemById(itemId: string) {
 
 // Create a new marketplace item
 export async function createMarketplaceItem(itemData: any) {
+  console.log("createMarketplaceItem called with :", itemData);
   const response = await fetch(`${API_BASE_URL}/api/marketplace/items`, {
     method: "POST",
     headers: {

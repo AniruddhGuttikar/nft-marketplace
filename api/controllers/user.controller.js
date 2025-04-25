@@ -28,7 +28,7 @@ exports.getUserProfile = async (req, res) => {
     }
 
     // Get owned NFTs
-    const provider = new ethers.providers.JsonRpcProvider(process.env.RPC_URL);
+    const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
     const marketplace =
       contractUtils.getMarketplaceContractWithSigner(provider);
     const items = await marketplace.fetchMyNFTs();
@@ -41,6 +41,7 @@ exports.getUserProfile = async (req, res) => {
       },
     });
   } catch (error) {
+    console.error("Error fetching user profile:", error);
     res.status(500).json({ error: error.message });
   }
 };
